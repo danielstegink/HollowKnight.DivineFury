@@ -13,7 +13,7 @@ namespace DivineFury
 {
     public class DivineFury : Mod, IMod, ILocalSettings<LocalSaveData>
     {
-        public override string GetVersion() => "1.0.0.0";
+        public override string GetVersion() => "1.0.0.1";
 
         #region Save Data
         public void OnLoadLocal(LocalSaveData s) => SharedData.localSaveData = s;
