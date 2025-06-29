@@ -41,7 +41,7 @@ namespace DivineFury
         /// linking the charm to certain settings
         /// </summary>
         /// <returns></returns>
-        public string InternalName()
+        public virtual string InternalName()
         {
             return Regex.Replace(Name, @"[^0-9a-zA-Z\._]", "");
         }

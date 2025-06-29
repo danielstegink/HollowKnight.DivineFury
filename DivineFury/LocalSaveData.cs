@@ -9,5 +9,6 @@
         public bool charmEquipped = false;
         public bool charmNew = false;
         public int charmCost = 0;
+        public bool charmUpgraded = false;
     }
 }

@@ -53,9 +53,11 @@
   </Target>
   <ItemGroup>
     <None Remove="Resources\DivineFury.png" />
+    <None Remove="Resources\GodseekersLament.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\DivineFury.png" />
+    <EmbeddedResource Include="Resources\GodseekersLament.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -340,6 +342,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" Link="README.md" />
-    <None Include=".gitignore" />
   </ItemGroup>
 </Project>
