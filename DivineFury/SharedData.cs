@@ -41,5 +41,28 @@ namespace DivineFury
                                        .GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             return (O)fieldInfo.GetValue(input);
         }
+
+        /// <summary>
+        /// Calls a private method from the given input class
+        /// </summary>
+        /// <typeparam name="I"></typeparam>
+        /// <typeparam name="O"></typeparam>
+        /// <param name="input"></param>
+        /// <param name="fieldName"></param>
+        /// <param name="parameters"></param>
+        /// <param name="isStaticOrConst"></param>
+        /// <returns></returns>
+        public static O CallFunction<I, O>(I input, string fieldName, object[] parameters, bool isStaticOrConst = false)
+        {
+            BindingFlags typeFlag = BindingFlags.Instance;
+            if (isStaticOrConst)
+            {
+                typeFlag = BindingFlags.Static;
+            }
+
+            MethodInfo methodInfo = input.GetType()
+                                            .GetMethod(fieldName, BindingFlags.NonPublic | typeFlag);
+            return (O)methodInfo.Invoke(input, parameters);
+        }
     }
 }

@@ -14,8 +14,8 @@ namespace DivineFury
         public static Sprite Get(string spriteFileName)
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
-            string[] manifestedResourceNames = assembly.GetManifestResourceNames();
-            SharedData.Log(string.Join(",", manifestedResourceNames));
+            //string[] manifestedResourceNames = assembly.GetManifestResourceNames();
+            //SharedData.Log(string.Join(",", manifestedResourceNames));
 
             using (Stream stream = assembly.GetManifestResourceStream($"DivineFury.Resources.{spriteFileName}.png"))
             {

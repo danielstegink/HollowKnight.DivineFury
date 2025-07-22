@@ -1,11 +1,10 @@
-﻿using ItemChanger.Locations;
+﻿using GlobalEnums;
 using ItemChanger;
-using UnityEngine;
+using ItemChanger.Locations;
 using SFCore.Utils;
-using GlobalEnums;
 using System;
-using Modding;
 using System.Collections;
+using UnityEngine;
 
 namespace DivineFury.Charms
 {
@@ -85,9 +84,10 @@ namespace DivineFury.Charms
         public override void ApplyEffects()
         {
             On.HeroController.CharmUpdate += OnUpdate;
-            ModHooks.TakeHealthHook += GodseekersLament;
+            On.HeroController.TakeDamage += GodseekersLament;
         }
 
+        #region Divine Fury
         /// <summary>
         /// When Divine Fury is equipped, set HP to 1 and 
         /// set Fury of the Fallen to trigger "automatically"
@@ -148,29 +148,84 @@ namespace DivineFury.Charms
                 }
             }
         }
+        #endregion
+
+        #region Godseeker's Lament
+        /// <summary>
+        /// Checks if the player is currently immune to damage
+        /// </summary>
+        private bool isImmune = false;
 
         /// <summary>
         /// Godseeker's Lament has a small chance to ignore damage
         /// </summary>
-        /// <param name="damage"></param>
-        /// <returns></returns>
-        private int GodseekersLament(int damage)
+        /// <param name="orig"></param>
+        /// <param name="self"></param>
+        /// <param name="go"></param>
+        /// <param name="damageSide"></param>
+        /// <param name="damageAmount"></param>
+        /// <param name="hazardType"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private void GodseekersLament(On.HeroController.orig_TakeDamage orig, HeroController self, GameObject go, CollisionSide damageSide, 
+                                        int damageAmount, int hazardType)
         {
-            if (damage > 0 &&
+            if (CanTakeDamage(hazardType) &&
+                damageAmount > 0 &&
                 IsEquipped() &&
                 IsUpgraded())
             {
-                int random = UnityEngine.Random.Range(1, 101);
-                int threshold = GetShieldChance();
-                if (random <= threshold)
+                // Check if currently immune
+                if (isImmune)
                 {
-                    //SharedData.Log("Ignoring damage");
-                    HeroController.instance.StartCoroutine(ShieldFlash());
-                    damage = 0;
+                    damageAmount = 0;
+                }
+                else // Otherwise, run the numbers
+                {
+                    int random = UnityEngine.Random.Range(1, 101);
+                    int threshold = GetShieldChance();
+                    //SharedData.Log($"Attempting to block: {random} vs {threshold}");
+                    if (random <= threshold)
+                    {
+                        damageAmount = 0;
+                        isImmune = true;
+                        GameManager.instance.StartCoroutine(ShieldFlash());
+                    }
                 }
             }
 
-            return damage;
+            orig(self, go, damageSide, damageAmount, hazardType);
+        }
+
+        /// <summary>
+        /// Determines if the player can take damage
+        /// </summary>
+        /// <param name="hazardType"></param>
+        /// <returns></returns>
+        private bool CanTakeDamage(int hazardType)
+        {
+            // Damage is calculated by the HeroController's TakeDamage method
+            // First, run the CanTakeDamage check from the HeroController
+            bool canTakeDamage = SharedData.CallFunction<HeroController, bool>(HeroController.instance, "CanTakeDamage", null);
+            if (canTakeDamage)
+            {
+                // There is an additional check for I-Frames and shadow dashing
+                if (hazardType == 1)
+                {
+                    if (HeroController.instance.damageMode == DamageMode.HAZARD_ONLY ||
+                        HeroController.instance.cState.shadowDashing ||
+                        HeroController.instance.parryInvulnTimer > 0f)
+                    {
+                        canTakeDamage = false;
+                    }
+                }
+                else if (HeroController.instance.cState.invulnerable ||
+                            PlayerData.instance.isInvincible)
+                {
+                    canTakeDamage = false;
+                }
+            }
+
+            return canTakeDamage;
         }
 
         /// <summary>
@@ -265,14 +320,20 @@ namespace DivineFury.Charms
         }
 
         /// <summary>
-        /// Flashes the VFX to indicate damage was absorbed
+        /// Flashes the VFX to indicate damage was absorbed. Also ensures player stays immune for 
+        /// a short time in case the damage was caused by collision with an enemy.
         /// </summary>
         /// <returns></returns>
         private IEnumerator ShieldFlash()
         {
+            // Want to wait 1 second before turning immunity off, and want the VFX to stay active
+            //  for about that long to show that the charm activated
             SpriteFlash flash = SharedData.GetField<HeroController, SpriteFlash>(HeroController.instance, "spriteFlash");
-            flash.flashShadeGet();
-            yield return new WaitForSeconds(0f);
+            flash.flash(UnityEngine.Color.black, 1f, 0.3f, 0.4f, 0.3f);
+
+            yield return new WaitForSeconds(1f);
+            isImmune = false;
         }
+        #endregion
     }
 }

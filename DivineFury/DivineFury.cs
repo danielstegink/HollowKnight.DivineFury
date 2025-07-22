@@ -13,7 +13,7 @@ namespace DivineFury
 {
     public class DivineFury : Mod, IMod, ILocalSettings<LocalSaveData>
     {
-        public override string GetVersion() => "1.1.0.0";
+        public override string GetVersion() => "1.1.1.0";
 
         #region Save Data
         public void OnLoadLocal(LocalSaveData s) => SharedData.localSaveData = s;
@@ -278,7 +278,7 @@ namespace DivineFury
                 placement.Add(item);
                 placements.Add(placement);
 
-                ItemChangerMod.AddPlacements(placements, PlacementConflictResolution.Replace);
+                ItemChangerMod.AddPlacements(placements, PlacementConflictResolution.Ignore);
                 //SharedData.Log("Charm placed");
             }
         }
