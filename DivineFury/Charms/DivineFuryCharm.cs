@@ -234,86 +234,57 @@ namespace DivineFury.Charms
         /// <returns></returns>
         private int GetShieldChance()
         {
-            // Carefree Melody shields for an average of about 7% per notch, so that will be our default
+            // Carefree Melody shields for an average of about 7% per notch
             int chance = 7;
 
             // There are several charms that don't work with this one. They improve healing, or they only
             //  trigger when damage is dealt. This mod will synergize with those charms by increasing
-            //  its shield chance based on how expensive the equipped charms are
-            int shieldPerNotch = 7;
-            
-            // Stalwart Shell - Its effect still triggers if damage is ignored.
-            // Treat as half as valuable
-            if (PlayerData.instance.equippedCharm_4)
-            {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_4 / 2;
-            }
+            //  its shield chance
+            int multiplier = 1;
 
+            // Stalwart Shell - Its effect still triggers if damage is ignored.
             // Grubsong - Triggers upon attack, even if damage ignored. 
-            // Treat as half as valuable
-            if (PlayerData.instance.equippedCharm_3)
-            {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_3 / 2;
-            }
+            // Thorns of Agony - Triggers upon attack, even if damage ignored. 
 
             // Fragile/Unbreakable Heart - Increases health by 2
             if (PlayerData.instance.equippedCharm_23)
             {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_23;
-            }
-
-            // Thorns of Agony - Triggers upon attack, even if damage ignored. 
-            // Treat as half as valuable
-            if (PlayerData.instance.equippedCharm_12)
-            {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_12 / 2;
+                multiplier++;
             }
 
             // Quick Focus - Increases healing speed
             if (PlayerData.instance.equippedCharm_7)
             {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_7;
+                multiplier++;
             }
 
             // Deep Focus - Increases healing amount
             if (PlayerData.instance.equippedCharm_34)
             {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_34;
-            }
-
-            // Lifeblood Heart - Gives lifeblood masks
-            if (PlayerData.instance.equippedCharm_8)
-            {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_8;
-            }
-
-            // Lifeblood Core - Gives lifeblood masks
-            if (PlayerData.instance.equippedCharm_9)
-            {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_9;
-            }
-
-            // Joni's Blessing - Gives lifeblood masks
-            if (PlayerData.instance.equippedCharm_27)
-            {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_27;
+                multiplier++;
             }
 
             // Hiveblood - Gives passive healing
             if (PlayerData.instance.equippedCharm_29)
             {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_29;
+                multiplier++;
             }
 
             // Shape of Unn - Allows player to move while healing. Has some
             // combo potential with Sporeshroom, but largely useless
             if (PlayerData.instance.equippedCharm_28)
             {
-                chance += shieldPerNotch * PlayerData.instance.charmCost_28;
+                multiplier++;
             }
 
-            // We don't want the shield chance to reach 100, so cap at 99%
+            // Exalted lifeblood charms give extra health, so they will be excluded from this
+            // Lifeblood Heart - Gives lifeblood masks
+            // Lifeblood Core - Gives lifeblood masks
+            // Joni's Blessing - Gives lifeblood masks
+
+            // We don't want the shield chance to go out of control, so prevent it from reaching 100%
             //SharedData.Log($"Final chance to ignore damage: {chance}%");
+            chance *= multiplier;
             chance = Math.Min(chance, 99);
 
             return chance;
@@ -329,9 +300,9 @@ namespace DivineFury.Charms
             // Want to wait 1 second before turning immunity off, and want the VFX to stay active
             //  for about that long to show that the charm activated
             SpriteFlash flash = SharedData.GetField<HeroController, SpriteFlash>(HeroController.instance, "spriteFlash");
-            flash.flash(UnityEngine.Color.black, 1f, 0.3f, 0.4f, 0.3f);
+            flash.flash(UnityEngine.Color.black, 0.8f, 0.4f, 0.5f, 0.4f);
 
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(1.3f);
             isImmune = false;
         }
         #endregion
