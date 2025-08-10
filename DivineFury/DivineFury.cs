@@ -1,9 +1,5 @@
-﻿using ItemChanger;
-using ItemChanger.Tags;
-using ItemChanger.UIDefs;
-using Modding;
+﻿using Modding;
 using MonoMod.RuntimeDetour;
-using SFCore;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -13,276 +9,52 @@ namespace DivineFury
 {
     public class DivineFury : Mod, IMod, ILocalSettings<LocalSaveData>
     {
-        public override string GetVersion() => "1.1.2.0";
+        public static DivineFury Instance;
+
+        public override string GetVersion() => "1.2.0.0";
 
         #region Save Data
-        public void OnLoadLocal(LocalSaveData s) => SharedData.localSaveData = s;
+        public void OnLoadLocal(LocalSaveData s)
+        {
+            SharedData.localSaveData = s;
 
-        public LocalSaveData OnSaveLocal() => SharedData.localSaveData;
+            if (SharedData.divineFury != null)
+            {
+                SharedData.divineFury.OnLoadLocal();
+            }
+        }
+
+        public LocalSaveData OnSaveLocal()
+        {
+            if (SharedData.divineFury != null)
+            {
+                SharedData.divineFury.OnSaveLocal();
+            }
+
+            return SharedData.localSaveData;
+        }
         #endregion
-
-        private Sprite upgradedSprite = null;
 
         public DivineFury() : base("Divine Fury") { }
 
-        #region Initialization
         /// <summary>
         /// Called when the mod is loaded
         /// </summary>
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects)
         {
-            SharedData.Log("Initializing Mod");
+            Log("Initializing Mod");
 
-            ApplyHooks();
-
-            InitializeCharm();
-
-            AddCharmToItemChanger();
-
-            SharedData.Log("Mod initialized");
-        }
-
-        /// <summary>
-        /// Applies mod hooks relating to charm infrastructure
-        /// </summary>
-        private void ApplyHooks()
-        {
-            //SharedData.Log("Applying hooks");
-
-            ModHooks.LanguageGetHook += GetCharmText;
-            ModHooks.GetPlayerBoolHook += GetCharmBools;
-            ModHooks.SetPlayerBoolHook += SetCharmBools;
-            ModHooks.GetPlayerIntHook += GetCharmCosts;
-            On.GameManager.EnterHero += OnEnterHero;
-            ModHooks.SavegameSaveHook += SaveGame;
-            On.CharmIconList.GetSprite += GetSprite;
+            Instance = new DivineFury();
 
             if (ModHooks.GetMod("DebugMod") != null)
             {
                 AddToGiveAllCharms(GiveCharm);
             }
 
-            if (ModHooks.GetMod("Exaltation") != null &&
-                ModHooks.GetMod("ExaltationExpanded") != null)
-            {
-                SharedData.exaltationInstalled = true;
-            }
+            SharedData.divineFury = new Charms.DivineFuryCharm();
 
-            //SharedData.Log("Hooks applied");
+            Log("Mod initialized");
         }
-
-        /// <summary>
-        /// Initializes the charm and its sprite
-        /// </summary>
-        private void InitializeCharm()
-        {
-            //SharedData.Log("Initializing charm");
-
-            // Add the charm to the charm list and get its new ID number
-            SharedData.divineFury.Sprite = SpriteHelper.Get(SharedData.divineFury.InternalName());
-            SharedData.divineFury.Num = CharmHelper.AddSprites(new Sprite[] { SharedData.divineFury.Sprite })[0];
-            SharedData.Log($"Sprite found for {SharedData.divineFury.Name}. ID assigned: {SharedData.divineFury.Num}");
-
-            // Get exalted version too, in case we need it
-            upgradedSprite = SpriteHelper.Get("GodseekersLament");
-
-            // Apply charm effects
-            SharedData.divineFury.ApplyEffects();
-
-            //SharedData.Log("Charm initialized");
-        }
-
-        /// <summary>
-        /// Adds charm to Item Changer so it can be placed on the map
-        /// </summary>
-        private void AddCharmToItemChanger()
-        {
-            //SharedData.Log("Adding charm to Item Changer");
-
-            // Tag the item for ConnectionMetadataInjector, so that MapModS and other mods recognize the items we're adding as charms.
-            var item = new ItemChanger.Items.CharmItem()
-            {
-                charmNum = SharedData.divineFury.Num,
-                name = SharedData.divineFury.InternalName(),
-                UIDef = new MsgUIDef()
-                {
-                    name = new LanguageString("UI", $"CHARM_NAME_{SharedData.divineFury.Num}"),
-                    shopDesc = new LanguageString("UI", $"CHARM_DESC_{SharedData.divineFury.Num}"),
-                    sprite = new ItemChangerSprite(SharedData.divineFury.InternalName(), SharedData.divineFury.Sprite)
-                }
-            };
-
-            var mapModTag = item.AddTag<InteropTag>();
-            mapModTag.Message = "RandoSupplementalMetadata";
-            mapModTag.Properties["ModSource"] = GetName();
-            mapModTag.Properties["PoolGroup"] = "Charms";
-
-            // Add the charm and its location to ItemChanger for placement
-            Finder.DefineCustomItem(item);
-            Finder.DefineCustomLocation(SharedData.divineFury.Location());
-
-            //SharedData.Log("Charm added to Item Changer");
-        }
-        #endregion
-
-        #region Charm Data and Settings
-        /// <summary>
-        /// Gets text data related to the charms (name and description)
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="sheetName"></param>
-        /// <param name="orig"></param>
-        /// <returns></returns>
-        private string GetCharmText(string key, string sheetName, string orig)
-        {
-            if (key.Equals($"CHARM_NAME_{SharedData.divineFury.Num}"))
-            {
-                return SharedData.divineFury.Name;
-            }
-            else if (key.Equals($"CHARM_DESC_{SharedData.divineFury.Num}"))
-            {
-                return SharedData.divineFury.Description;
-            }
-
-            return orig;
-        }
-
-        /// <summary>
-        /// Gets boolean values related to the charms (equipped, new, found)
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="defaultValue"></param>
-        /// <returns></returns>
-        private bool GetCharmBools(string key, bool defaultValue)
-        {
-            if (key.Equals($"gotCharm_{SharedData.divineFury.Num}"))
-            {
-                return SharedData.localSaveData.charmFound;
-            }
-            else if (key.Equals($"equippedCharm_{SharedData.divineFury.Num}"))
-            {
-                return SharedData.localSaveData.charmEquipped;
-            }
-            else if (key.Equals($"newCharm_{SharedData.divineFury.Num}"))
-            {
-                return SharedData.localSaveData.charmNew;
-            }
-
-            return defaultValue;
-        }
-
-        /// <summary>
-        /// Sets boolean values related to the charms (equipped, new, found)
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="orig"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        private bool SetCharmBools(string key, bool orig)
-        {
-            if (key.Equals($"gotCharm_{SharedData.divineFury.Num}"))
-            {
-                SharedData.localSaveData.charmFound = orig;
-            }
-            else if (key.Equals($"equippedCharm_{SharedData.divineFury.Num}"))
-            {
-                SharedData.localSaveData.charmEquipped = orig;
-            }
-            else if (key.Equals($"newCharm_{SharedData.divineFury.Num}"))
-            {
-                SharedData.localSaveData.charmNew = orig;
-            }
-
-            return orig;
-        }
-
-        /// <summary>
-        /// Gets the costs of charms
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="defaultValue"></param>
-        /// <returns></returns>
-        private int GetCharmCosts(string key, int defaultValue)
-        {
-            if (key.Equals($"charmCost_{SharedData.divineFury.Num}"))
-            {
-                return SharedData.localSaveData.charmCost;
-            }
-
-            return defaultValue;
-        }
-
-        /// <summary>
-        /// Gets the charm's sprite
-        /// </summary>
-        /// <param name="orig"></param>
-        /// <param name="self"></param>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        private Sprite GetSprite(On.CharmIconList.orig_GetSprite orig, CharmIconList self, int id)
-        {
-            // If the charm has been upgraded, get the upgraded version's sprite instead
-            if (id == SharedData.divineFury.Num &&
-                SharedData.divineFury.IsUpgraded())
-            {
-                return upgradedSprite;
-            }
-
-            return orig(self, id);
-        }
-        #endregion
-
-        /// <summary>
-        /// Upon saving, upgrade Divine Fury if it is eligible.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <exception cref="NotImplementedException"></exception>
-        private void SaveGame(int obj)
-        {
-            // Confirm ascended Pure Vessel or Patheon of Hallownest has been bested
-            SharedData.localSaveData.charmUpgraded = PlayerData.instance.statueStateHollowKnight.completedTier2 ||
-                                                        PlayerData.instance.bossDoorStateTier5.completed;
-        }
-
-        #region Charm Placement
-        /// <summary>
-        /// Triggers when the player enters a new area
-        /// </summary>
-        /// <param name="orig"></param>
-        /// <param name="self"></param>
-        /// <param name="additiveGateSearch"></param>
-        private void OnEnterHero(On.GameManager.orig_EnterHero orig, GameManager self, bool additiveGateSearch)
-        {
-            //SharedData.Log($"Scene entered: {self.sceneName}");
-            PlaceCharms();
-
-            orig(self, additiveGateSearch);
-        }
-
-        /// <summary>
-        /// Gets charms from ItemChanger and places them on the map
-        /// </summary>
-        public void PlaceCharms()
-        {
-            // Only place charms player hasn't collected
-            //SharedData.Log("Placing charm");
-            if (!SharedData.localSaveData.charmFound)
-            {
-                ItemChangerMod.CreateSettingsProfile(false, false);
-                List<AbstractPlacement> placements = new List<AbstractPlacement>();
-
-                AbstractLocation location = Finder.GetLocation(SharedData.divineFury.InternalName());
-                AbstractPlacement placement = location.Wrap();
-                AbstractItem item = Finder.GetItem(SharedData.divineFury.InternalName());
-                placement.Add(item);
-                placements.Add(placement);
-
-                ItemChangerMod.AddPlacements(placements, PlacementConflictResolution.Ignore);
-                //SharedData.Log("Charm placed");
-            }
-        }
-        #endregion
 
         #region Debug Mod
         /// <summary>
