@@ -1,4 +1,6 @@
-﻿namespace DivineFury
+﻿using DivineFury.Helpers;
+
+namespace DivineFury
 {
     /// <summary>
     /// Stores variables and functions used by multiple files in this project
@@ -10,6 +12,6 @@
         /// </summary>
         public static LocalSaveData localSaveData { get; set; } = new LocalSaveData();
 
-        public static Charms.DivineFuryCharm divineFury;
+        public static DivineFuryCharm divineFury;
     }
 }

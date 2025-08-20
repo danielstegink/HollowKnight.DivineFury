@@ -9,6 +9,9 @@ This mod doesn't affect lifeblood masks gained from BlueHealthHook, such as thos
 This charm can be acquired via the All Charms option in DebugMod.
 
 ## Patch Notes
+1.2.1.0
+- Updated with changes to DanielSteginkUtils
+
 1.2.0.0
 -	Integrated with DanielSteginkUtils
 -	Rebalanced integration and removed charm synergies

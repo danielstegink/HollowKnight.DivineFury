@@ -2,7 +2,7 @@
 using DanielSteginkUtils.Utilities;
 using System.Collections;
 
-namespace DivineFury.Charm_Helpers
+namespace DivineFury.Helpers
 {
     public class LamentShield : ShieldHelper
     {

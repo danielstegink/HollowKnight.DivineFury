@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace DivineFury
+namespace DivineFury.Helpers
 {
     public static class SpriteHelper
     {

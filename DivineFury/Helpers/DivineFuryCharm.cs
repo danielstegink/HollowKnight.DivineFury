@@ -1,11 +1,10 @@
 ﻿using DanielSteginkUtils.Helpers.Charms.Templates;
-using DivineFury.Charm_Helpers;
 using ItemChanger;
 using ItemChanger.Locations;
 using SFCore.Utils;
 using UnityEngine;
 
-namespace DivineFury.Charms
+namespace DivineFury.Helpers
 {
     /// <summary>
     /// Divine Fury sets the player's health to 1
@@ -27,8 +26,6 @@ namespace DivineFury.Charms
 
         public override string exaltedDescription => "Contains the Godseeker's fear and desperation.\n\n" +
                                                         "Reduces the bearer's health to 1, but gives a small chance to ignore damage.";
-
-        public override Sprite icon => SpriteHelper.Get("DivineFury");
 
         public override Sprite exaltedIcon => SpriteHelper.Get("GodseekersLament");
 
