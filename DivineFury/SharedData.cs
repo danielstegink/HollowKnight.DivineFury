@@ -12,7 +12,7 @@ namespace DivineFury
         /// </summary>
         public static LocalSaveData localSaveData { get; set; } = new LocalSaveData();
 
-        public static Charms.DivineFuryCharm divineFury = new Charms.DivineFuryCharm();
+        public static Charms.DivineFuryCharm divineFury;
 
         private static DivineFury _logger = new DivineFury();
 

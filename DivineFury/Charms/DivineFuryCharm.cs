@@ -1,6 +1,8 @@
-﻿using GlobalEnums;
+﻿using DanielSteginkUtils.Helpers.Charms.Templates;
+using GlobalEnums;
 using ItemChanger;
 using ItemChanger.Locations;
+using SFCore;
 using SFCore.Utils;
 using System;
 using System.Collections;
@@ -11,18 +13,44 @@ namespace DivineFury.Charms
     /// <summary>
     /// Divine Fury sets the player's health to 1
     /// </summary>
-    public class DivineFuryCharm : Charm
+    public class DivineFuryCharm : ExaltedCharm
     {
-        public override string Name => GetName();
+        public DivineFuryCharm() : base("Divine Fury", true) { }
 
-        public override string Description => GetDescription();
+        #region Overrides
+        public override string name => "Divine Fury";
 
-        public override AbstractLocation Location()
+        public override string exaltedName => "Godseeker's Lament";
+
+        public override string description => "Manifestation of the Godseeker's outrage and hatred for trespassers.\n\n" +
+                        "Reduces the bearer's health to 1.";
+
+        public override string exaltedDescription => "Manifestation of the Godseeker's fear and desperation.\n\n" +
+                        "Reduces the bearer's health to 1, but gives a small chance to ignore damage.";
+
+        public override int cost => 0;
+
+        public override int exaltedCost => 0;
+
+        public override Sprite exaltedIcon => SpriteHelper.Get("GodseekersLament");
+
+        public override bool CanUpgrade()
+        {
+            return PlayerData.instance.statueStateHollowKnight.completedTier2 ||
+                                                        PlayerData.instance.bossDoorStateTier5.completed;
+        }
+
+        public override string GetItemChangerId()
+        {
+            return "DivineFury";
+        }
+
+        public override AbstractLocation ItemChangerLocation()
         {
             // This charm should be placed at the entrance to the Hall of the Gods
             return new CoordinateLocation()
             {
-                name = InternalName(),
+                name = GetItemChangerId(),
                 sceneName = "GG_Workshop",
                 x = 17.65f,
                 y = 6.41f,
@@ -30,92 +58,79 @@ namespace DivineFury.Charms
             };
         }
 
-        public override string InternalName()
+        protected override Sprite GetSpriteInternal()
         {
-            return "DivineFury";
-        }
-
-        /// <summary>
-        /// Determines if the charm has been upgraded per Exaltation Expanded
-        /// </summary>
-        /// <returns></returns>
-        public bool IsUpgraded()
-        {
-            return SharedData.localSaveData.charmUpgraded &&
-                    SharedData.exaltationInstalled;
-        }
-
-        #region Get Data
-        /// <summary>
-        /// Gets charm name
-        /// </summary>
-        /// <returns></returns>
-        private string GetName()
-        {
-            if (!IsUpgraded())
-            {
-                return "Divine Fury";
-            }
-            else
-            {
-                return "Godseeker's Lament";
-            }
-        }
-
-        /// <summary>
-        /// Gets charm description
-        /// </summary>
-        /// <returns></returns>
-        private string GetDescription()
-        {
-            if (!IsUpgraded())
-            {
-                return "Manifestation of the Godseeker's outrage and hatred for trespassers.\n\n" +
-                        "Reduces the bearer's health to 1.";
-            }
-            else
-            {
-                return "Manifestation of the Godseeker's fear and desperation.\n\n" +
-                        "Reduces the bearer's health to 1, but gives a small chance to ignore damage.";
-            }
+            return SpriteHelper.Get(GetItemChangerId());
         }
         #endregion
 
-        public override void ApplyEffects()
+        #region Activation
+        private GameObject furyOfTheFallen;
+
+        /// <summary>
+        /// Activates the charm effects
+        /// </summary>
+        public override void Equip()
         {
-            On.HeroController.CharmUpdate += OnUpdate;
+            // Get Fury of the Fallen
+            furyOfTheFallen = GameObject.Find("Charm Effects");
+            // Set health to 1 and blue health to 0
+            // Doesn't affect Lifeblood Heart or Lifeblood Core
+            PlayerData.instance.joniHealthBlue = 0;
+            PlayerData.instance.healthBlue = 0;
+            PlayerData.instance.health = 1;
+            PlayerData.instance.maxHealth = 1;
+
+            SetFury(furyOfTheFallen, PlayerData.instance.equippedCharm_6);
+
             On.HeroController.TakeDamage += GodseekersLament;
         }
 
-        #region Divine Fury
         /// <summary>
-        /// When Divine Fury is equipped, set HP to 1 and 
-        /// set Fury of the Fallen to trigger "automatically"
+        /// Deactivates the charm effects
         /// </summary>
-        private void OnUpdate(On.HeroController.orig_CharmUpdate orig, HeroController self)
+        public override void Unequip()
         {
-            // Perform charm updates first so that the health charms perform their effects
-            orig(self);
-
-            // Get Fury of the Fallen
-            GameObject furyOfTheFallen = GameObject.Find("Charm Effects");
-            if (SharedData.localSaveData.charmEquipped)
-            {
-                // Set health to 1 and blue health to 0
-                // Doesn't affect Lifeblood Heart or Lifeblood Core
-                PlayerData.instance.joniHealthBlue = 0;
-                PlayerData.instance.healthBlue = 0;
-                PlayerData.instance.health = 1;
-                PlayerData.instance.maxHealth = 1;
-
-                SetFury(furyOfTheFallen, PlayerData.instance.equippedCharm_6);
-            }
-            else
+            if (furyOfTheFallen != null)
             {
                 SetFury(furyOfTheFallen, false);
             }
+
+            On.HeroController.TakeDamage -= GodseekersLament;
+        }
+        #endregion
+
+        #region Save Settings
+        /// <summary>
+        /// Loads settings (see EasyCharmState or ExaltedCharmState) from local save data
+        /// </summary>
+        public override void OnLoadLocal()
+        {
+            ExaltedCharmState charmState = new ExaltedCharmState()
+            {
+                GotCharm = SharedData.localSaveData.charmFound,
+                IsEquipped = SharedData.localSaveData.charmEquipped,
+                IsNew = SharedData.localSaveData.charmNew,
+                IsUpgraded = SharedData.localSaveData.charmUpgraded,
+            };
+            RestoreCharmState(charmState);
         }
 
+        /// <summary>
+        /// Saves settings (see EasyCharmState or ExaltedCharmState) to local save data
+        /// </summary>
+        public override void OnSaveLocal()
+        {
+            ExaltedCharmState charmState = GetCharmState();
+            SharedData.localSaveData.charmFound = charmState.GotCharm;
+            SharedData.localSaveData.charmCost = GetCharmCost();
+            SharedData.localSaveData.charmUpgraded = charmState.IsUpgraded;
+            SharedData.localSaveData.charmNew = charmState.IsNew;
+            SharedData.localSaveData.charmEquipped = charmState.IsEquipped;
+        }
+        #endregion
+
+        #region Divine Fury
         /// <summary>
         /// Sets Fury of the Fallen to trigger automatically if 
         /// Fury of the Fallen is equipped
@@ -171,8 +186,7 @@ namespace DivineFury.Charms
         {
             if (CanTakeDamage(hazardType) &&
                 damageAmount > 0 &&
-                IsEquipped() &&
-                IsUpgraded())
+                IsUpgraded)
             {
                 // Check if currently immune
                 if (isImmune)
