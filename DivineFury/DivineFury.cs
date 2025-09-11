@@ -12,7 +12,7 @@ namespace DivineFury
     {
         public static DivineFury Instance;
 
-        public override string GetVersion() => "1.2.1.0";
+        public override string GetVersion() => "1.2.1.1";
 
         #region Save Data
         public void OnLoadLocal(LocalSaveData s)
@@ -89,7 +89,7 @@ namespace DivineFury
         /// </summary>
         private void GiveCharm()
         {
-            SharedData.localSaveData.charmFound = true;
+            SharedData.divineFury.GiveCharm();
         }
         #endregion
     }
