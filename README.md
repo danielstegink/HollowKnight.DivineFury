@@ -1,14 +1,17 @@
 # Divine Fury
 
-This mod adds a new charm to Hollow Knight: Divine Fury. 
+This mod adds a new charm to Hollow Knight: Divine Fury.
 
-Divine Fury sets the player's health to 1, making it easier to trigger Fury of the Fallen in Godhome battles. It is fully compatible with Joni's Blessing, Lifeblood Heart and Lifeblood Core.
-
-This mod doesn't affect lifeblood masks gained from BlueHealthHook, such as those from the Exaltation mod. However, FOTF still triggers.
+Divine Fury sets the player's health to 1, making it easier to trigger Fury of the Fallen in Godhome battles.
 
 This charm can be acquired via the All Charms option in DebugMod.
 
+WARNING - This mod uses ItemChanger, and therefore requires a new Save in order to take effect.
+
 ## Patch Notes
+1.2.1.2
+- Updated Readme
+
 1.2.1.1
 - Modified to use SFCore's GiveCharm function
 

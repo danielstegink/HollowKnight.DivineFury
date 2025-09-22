@@ -12,7 +12,7 @@ namespace DivineFury
     {
         public static DivineFury Instance;
 
-        public override string GetVersion() => "1.2.1.1";
+        public override string GetVersion() => "1.2.1.2";
 
         #region Save Data
         public void OnLoadLocal(LocalSaveData s)
